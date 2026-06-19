@@ -40,7 +40,8 @@
 
 // Define SPI config speed
 // baudrate should target 3.2MHz
-#if defined(AT32F415)
+#if defined(WB32F3G71xx) || defined(WB32FQ95xx)
+#elif defined(AT32F415)
 #    if WS2812_SPI_DIVISOR == 2
 #        define WS2812_SPI_DIVISOR_CTRL1_MDIV_X (0)
 #    elif WS2812_SPI_DIVISOR == 4
