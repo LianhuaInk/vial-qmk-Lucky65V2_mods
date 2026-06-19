@@ -1,0 +1,9 @@
+VIA_ENABLE = yes
+VIAL_ENABLE = yes
+ENCODER_MAP_ENABLE = yes
+VIAL_INSECURE = yes
+VIALRGB_ENABLE = yes
+
+ifeq ($(strip $(CONSOLE_ENABLE)), yes)
+    KEYBOARD_SHARED_EP := yes
+endif
