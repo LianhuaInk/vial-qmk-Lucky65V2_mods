@@ -1491,6 +1491,12 @@ void mm_send_mouse(report_mouse_t *report) {
 
 #    include "via.h"
 #    include "raw_hid.h"
+#    ifdef VIAL_ENABLE
+#        include "vial.h"
+#    endif
+#    ifdef VIALRGB_ENABLE
+#        include "vialrgb.h"
+#    endif
 
 #    ifdef ENCODER_MAP_ENABLE
 #        ifndef id_dynamic_keymap_get_encoder
@@ -1546,6 +1552,11 @@ bool via_command_kb(uint8_t *data, uint8_t length) {
     }
 
     switch (*command_id) {
+#ifdef VIAL_ENABLE
+        case id_vial_prefix: {
+            vial_handle_cmd(data, length);
+        } break;
+#endif
         case id_get_protocol_version: {
             command_data[0] = VIA_PROTOCOL_VERSION >> 8;
             command_data[1] = VIA_PROTOCOL_VERSION & 0xFF;
@@ -1643,7 +1654,24 @@ bool via_command_kb(uint8_t *data, uint8_t length) {
         case id_custom_set_value:
         case id_custom_get_value:
         case id_custom_save: {
-            via_custom_value_command_kb(data, length);
+#ifdef VIALRGB_ENABLE
+            if (command_data[0] != id_custom_channel) {
+                switch (*command_id) {
+                    case id_lighting_set_value: {
+                        vialrgb_set_value(data, length);
+                    } break;
+                    case id_lighting_get_value: {
+                        vialrgb_get_value(data, length);
+                    } break;
+                    case id_lighting_save: {
+                        vialrgb_save(data, length);
+                    } break;
+                }
+            } else
+#endif
+            {
+                via_custom_value_command_kb(data, length);
+            }
             break;
         }
 #    ifdef VIA_EEPROM_ALLOW_RESET
