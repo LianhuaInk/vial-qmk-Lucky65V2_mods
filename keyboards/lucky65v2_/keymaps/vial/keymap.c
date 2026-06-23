@@ -446,6 +446,26 @@ static bool process_socd_toggle_combo(uint16_t keycode, keyrecord_t *record) {
     return true;
 }
 
+static bool process_socd_toggle_keycode(uint16_t keycode, keyrecord_t *record) {
+    if (keycode != SOCD_TOG) {
+        return true;
+    }
+
+    if (record->event.pressed) {
+        socd_toggle();
+    }
+
+    return false;
+}
+
+bool pre_process_record_user(uint16_t keycode, keyrecord_t *record) {
+    if (!process_socd_toggle_combo(keycode, record)) {
+        return false;
+    }
+
+    return process_socd_toggle_keycode(keycode, record);
+}
+
 static bool process_socd(uint16_t keycode, keyrecord_t *record) {
     if (!socd_enabled) {
         return true;
@@ -483,7 +503,7 @@ static bool process_socd(uint16_t keycode, keyrecord_t *record) {
 }
 
 bool im_process_record_user(uint16_t keycode, keyrecord_t *record) {
-    if (!process_socd_toggle_combo(keycode, record)) {
+    if (!process_socd_toggle_keycode(keycode, record)) {
         return false;
     }
 
@@ -644,13 +664,6 @@ bool im_process_record_user(uint16_t keycode, keyrecord_t *record) {
             {
                 Change_To_Layer_move_fun(3);
             }
-        }
-        return false;
-    break;
-    case SOCD_TOG:
-        if (record->event.pressed)
-        {
-            socd_toggle();
         }
         return false;
     break;
