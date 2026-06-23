@@ -16,7 +16,8 @@
     {"name": "2.4G","title": "2.4G","shortName": "DEV 2.4G"},
     {"name": "USB","title": "USB","shortName": "DEV USB"},
     {"name": "Show Battery","title": "Show Battery","shortName": "Battery"},
-    {"name": "convert F1&1","title": "convert F1&1","shortName": "convert F1&1"}
+    {"name": "convert F1&1","title": "convert F1&1","shortName": "convert F1&1"},
+    {"name": "SOCD Toggle","title": "Toggle SOCD","shortName": "SOCD"}
   ],
     "layouts": {
     "labels": [

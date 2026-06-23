@@ -45,14 +45,14 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         TO(_LM),   IM_BT1,  IM_BT2,  IM_BT3,  IM_2G4,  IM_USB, _______,  _______, _______, _______, KC_PSCR, _______, _______, RGB_MOD, _______,
         _______,   _______, _______, _______, _______, _______, KC_SCRL, KC_PAUS, KC_HOME, KC_END,  _______, _______, RGB_HUI,          _______,
         _______,   _______,  _______,  _______,  _______, _______, _______, _______, _______, _______, _______, _______,          RGB_VAI, _______,
-        NUM_TOF1,   GU_TOGG, _______,                            IM_BATQ,IM_BATQ,IM_BATQ,                            _______, _______, RGB_SPD, RGB_VAD, RGB_SPI),
+        NUM_TOF1,   GU_TOGG, SOCD_TOG,                           IM_BATQ,IM_BATQ,IM_BATQ,                            _______, _______, RGB_SPD, RGB_VAD, RGB_SPI),
 
     [_LS] = LAYOUT( /* Base */
         EE_CLR,    KC_MYCM, KC_MAIL, KC_WHOM, KC_CALC, KC_MSEL, KC_MSTP, KC_MPRV, KC_MPLY, KC_MNXT, KC_MUTE, KC_VOLD, KC_VOLU, RGB_TOG, _______,KC_MUTE,
         TO(_LM),   IM_BT1,  IM_BT2,  IM_BT3,  IM_2G4,  IM_USB, _______,  _______, _______, _______, KC_PSCR, _______, _______, RGB_MOD, _______,
         _______,   _______, _______, _______, _______, _______, KC_SCRL, KC_PAUS, KC_HOME, KC_END,  _______, _______, RGB_HUI,          _______,
         _______,   _______,  _______,  _______,  _______, _______, _______, _______, _______, _______, _______, _______,          RGB_VAI, _______,
-        NUM_TOF1,   GU_TOGG, _______,                            IM_BATQ,IM_BATQ,IM_BATQ,                            _______, _______, RGB_SPD, RGB_VAD, RGB_SPI),
+        NUM_TOF1,   GU_TOGG, SOCD_TOG,                           IM_BATQ,IM_BATQ,IM_BATQ,                            _______, _______, RGB_SPD, RGB_VAD, RGB_SPI),
 
 
 
@@ -68,14 +68,14 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         TO(_LB),   IM_BT1,  IM_BT2,  IM_BT3,  IM_2G4,  IM_USB, _______,  _______, _______, _______, KC_PSCR, _______, _______, RGB_MOD, _______,
         _______,   _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, RGB_HUI,          _______,
         _______,   _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,          RGB_VAI, _______,
-        NUM_TOF1,   _______, _______,                            IM_BATQ,IM_BATQ,IM_BATQ,                            _______, _______, RGB_SPD, RGB_VAD, RGB_SPI),
+        NUM_TOF1,   _______, SOCD_TOG,                           IM_BATQ,IM_BATQ,IM_BATQ,                            _______, _______, RGB_SPD, RGB_VAD, RGB_SPI),
 
     [_LMS] = LAYOUT(  /* FN */
         EE_CLR,    KC_BRIU, KC_BRID, _______, _______, _______, _______, KC_MPRV, KC_MPLY, KC_MNXT, KC_MUTE, KC_VOLD, KC_VOLU, RGB_TOG, _______,KC_MUTE,
         TO(_LB),   IM_BT1,  IM_BT2,  IM_BT3,  IM_2G4,  IM_USB, _______,  _______, _______, _______, KC_PSCR, _______, _______, RGB_MOD, _______,
         _______,   _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, RGB_HUI,          _______,
         _______,   _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,          RGB_VAI, _______,
-        NUM_TOF1,   _______, _______,                            IM_BATQ,IM_BATQ,IM_BATQ,                            _______, _______, RGB_SPD, RGB_VAD, RGB_SPI),
+        NUM_TOF1,   _______, SOCD_TOG,                           IM_BATQ,IM_BATQ,IM_BATQ,                            _______, _______, RGB_SPD, RGB_VAD, RGB_SPI),
 
 };
 #ifdef ENCODER_MAP_ENABLE
@@ -347,7 +347,150 @@ void Change_To_Layer_move_fun(uint8_t Layer_num )
 const uint8_t f1_12_keycode[]=
 {KC_F1,KC_F2,KC_F3,KC_F4,KC_F5,KC_F6,KC_F7,KC_F8,KC_F9,KC_F10,KC_F11,KC_F12};
 volatile uint8_t Fn_key_press_Page = 0 ;
+
+typedef struct {
+    uint16_t first;
+    uint16_t second;
+    bool     first_pressed;
+    bool     second_pressed;
+    uint16_t active;
+} socd_pair_t;
+
+static socd_pair_t socd_pairs[] = {
+    {KC_A, KC_D, false, false, KC_NO},
+    {KC_S, KC_W, false, false, KC_NO},
+    {KC_LEFT, KC_RGHT, false, false, KC_NO},
+    {KC_DOWN, KC_UP, false, false, KC_NO},
+};
+
+static bool socd_enabled = false;
+static bool socd_combo_lctl_pressed = false;
+static bool socd_combo_rctl_pressed = false;
+static bool socd_combo_used = false;
+#ifdef RGB_MATRIX_ENABLE
+#    define SOCD_RGB_INTERVAL 250
+#    define SOCD_RGB_BLINK_STEPS 4
+static uint32_t socd_rgb_timer = 0;
+static uint8_t  socd_rgb_steps_remaining = 0;
+static bool     socd_rgb_on = false;
+#endif
+
+static void socd_set_active(socd_pair_t *pair, uint16_t keycode) {
+    if (pair->active == keycode) {
+        return;
+    }
+
+    if (pair->active != KC_NO) {
+        unregister_code16(pair->active);
+    }
+
+    pair->active = keycode;
+
+    if (pair->active != KC_NO) {
+        register_code16(pair->active);
+    }
+}
+
+static void socd_clear(void) {
+    for (uint8_t i = 0; i < sizeof(socd_pairs) / sizeof(socd_pairs[0]); i++) {
+        socd_pairs[i].first_pressed = false;
+        socd_pairs[i].second_pressed = false;
+        socd_set_active(&socd_pairs[i], KC_NO);
+        unregister_code16(socd_pairs[i].first);
+        unregister_code16(socd_pairs[i].second);
+    }
+}
+
+static void socd_toggle(void) {
+    socd_enabled = !socd_enabled;
+    socd_clear();
+#ifdef RGB_MATRIX_ENABLE
+    socd_rgb_timer = 0;
+    socd_rgb_on = false;
+    socd_rgb_steps_remaining = socd_enabled ? SOCD_RGB_BLINK_STEPS : 0;
+#endif
+}
+
+static bool process_socd_toggle_combo(uint16_t keycode, keyrecord_t *record) {
+    if (keycode != KC_LCTL && keycode != KC_RCTL) {
+        return true;
+    }
+
+    bool *this_key = (keycode == KC_LCTL) ? &socd_combo_lctl_pressed : &socd_combo_rctl_pressed;
+    bool *other_key = (keycode == KC_LCTL) ? &socd_combo_rctl_pressed : &socd_combo_lctl_pressed;
+
+    if (record->event.pressed) {
+        *this_key = true;
+
+        if (*other_key && !socd_combo_used) {
+            socd_combo_used = true;
+            socd_toggle();
+            unregister_code16(KC_LCTL);
+            unregister_code16(KC_RCTL);
+            return false;
+        }
+    } else {
+        *this_key = false;
+        bool combo_was_used = socd_combo_used;
+
+        if (!socd_combo_lctl_pressed && !socd_combo_rctl_pressed) {
+            socd_combo_used = false;
+        }
+
+        if (combo_was_used) {
+            unregister_code16(keycode);
+            return false;
+        }
+    }
+
+    return true;
+}
+
+static bool process_socd(uint16_t keycode, keyrecord_t *record) {
+    if (!socd_enabled) {
+        return true;
+    }
+
+    for (uint8_t i = 0; i < sizeof(socd_pairs) / sizeof(socd_pairs[0]); i++) {
+        socd_pair_t *pair = &socd_pairs[i];
+
+        if (keycode == pair->first) {
+            pair->first_pressed = record->event.pressed;
+
+            if (record->event.pressed) {
+                socd_set_active(pair, pair->first);
+            } else if (pair->active == pair->first) {
+                socd_set_active(pair, pair->second_pressed ? pair->second : KC_NO);
+            }
+
+            return false;
+        }
+
+        if (keycode == pair->second) {
+            pair->second_pressed = record->event.pressed;
+
+            if (record->event.pressed) {
+                socd_set_active(pair, pair->second);
+            } else if (pair->active == pair->second) {
+                socd_set_active(pair, pair->first_pressed ? pair->first : KC_NO);
+            }
+
+            return false;
+        }
+    }
+
+    return true;
+}
+
 bool im_process_record_user(uint16_t keycode, keyrecord_t *record) {
+    if (!process_socd_toggle_combo(keycode, record)) {
+        return false;
+    }
+
+    if (!process_socd(keycode, record)) {
+        return false;
+    }
+
     switch (keycode) {
     case EE_CLR:
     {
@@ -504,6 +647,13 @@ bool im_process_record_user(uint16_t keycode, keyrecord_t *record) {
         }
         return false;
     break;
+    case SOCD_TOG:
+        if (record->event.pressed)
+        {
+            socd_toggle();
+        }
+        return false;
+    break;
     case KC_LGUI: {
         if (record->event.pressed)
         {
@@ -653,6 +803,43 @@ bool im_lkey_process_user(uint16_t keycode, bool pressed) {
 #    define RGB_MATRIX_BAT_VAL RGB_MATRIX_MAXIMUM_BRIGHTNESS
 #endif
 
+#define SOCD_RGB_COLOR 150, 150, 150
+#define SOCD_RGB_TAB_COLOR 0xff, 0xff, 0xff
+#define SOCD_RGB_LED_TAB 39
+#define SOCD_RGB_LED_W 41
+#define SOCD_RGB_LED_A 37
+#define SOCD_RGB_LED_S 36
+#define SOCD_RGB_LED_D 35
+
+static void socd_rgb_set_color(uint8_t r, uint8_t g, uint8_t b) {
+    rgb_matrix_set_color(SOCD_RGB_LED_W, r, g, b);
+    rgb_matrix_set_color(SOCD_RGB_LED_A, r, g, b);
+    rgb_matrix_set_color(SOCD_RGB_LED_S, r, g, b);
+    rgb_matrix_set_color(SOCD_RGB_LED_D, r, g, b);
+}
+
+static void socd_rgb_task(void) {
+    if (socd_enabled) {
+        rgb_matrix_set_color(SOCD_RGB_LED_TAB, SOCD_RGB_TAB_COLOR);
+    }
+
+    if (socd_rgb_steps_remaining == 0) {
+        return;
+    }
+
+    if (socd_rgb_timer == 0 || timer_elapsed32(socd_rgb_timer) >= SOCD_RGB_INTERVAL) {
+        socd_rgb_timer = timer_read32();
+        socd_rgb_on = !socd_rgb_on;
+        socd_rgb_steps_remaining--;
+    }
+
+    if (socd_rgb_on) {
+        socd_rgb_set_color(SOCD_RGB_COLOR);
+    } else {
+        socd_rgb_set_color(0, 0, 0);
+    }
+}
+
 bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
 
 
@@ -672,6 +859,9 @@ bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
         rgb_matrix_set_color(4, 0xff, 0xff, 0xff);
 
     }
+
+    socd_rgb_task();
+
     return true;
 }
 #endif

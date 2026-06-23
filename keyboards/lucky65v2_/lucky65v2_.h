@@ -63,4 +63,5 @@ enum safe_key {
   US_STOP,
   MM_WTAB,
  NUM_TOF1 = 0x7E08   ,
+ SOCD_TOG = 0x7E09   ,
 };
