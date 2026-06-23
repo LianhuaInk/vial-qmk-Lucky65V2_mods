@@ -364,9 +364,6 @@ static socd_pair_t socd_pairs[] = {
 };
 
 static bool socd_enabled = false;
-static bool socd_combo_lctl_pressed = false;
-static bool socd_combo_rctl_pressed = false;
-static bool socd_combo_used = false;
 #ifdef RGB_MATRIX_ENABLE
 #    define SOCD_RGB_INTERVAL 250
 #    define SOCD_RGB_BLINK_STEPS 4
@@ -411,41 +408,6 @@ static void socd_toggle(void) {
 #endif
 }
 
-static bool process_socd_toggle_combo(uint16_t keycode, keyrecord_t *record) {
-    if (keycode != KC_LCTL && keycode != KC_RCTL) {
-        return true;
-    }
-
-    bool *this_key = (keycode == KC_LCTL) ? &socd_combo_lctl_pressed : &socd_combo_rctl_pressed;
-    bool *other_key = (keycode == KC_LCTL) ? &socd_combo_rctl_pressed : &socd_combo_lctl_pressed;
-
-    if (record->event.pressed) {
-        *this_key = true;
-
-        if (*other_key && !socd_combo_used) {
-            socd_combo_used = true;
-            socd_toggle();
-            unregister_code16(KC_LCTL);
-            unregister_code16(KC_RCTL);
-            return false;
-        }
-    } else {
-        *this_key = false;
-        bool combo_was_used = socd_combo_used;
-
-        if (!socd_combo_lctl_pressed && !socd_combo_rctl_pressed) {
-            socd_combo_used = false;
-        }
-
-        if (combo_was_used) {
-            unregister_code16(keycode);
-            return false;
-        }
-    }
-
-    return true;
-}
-
 static bool process_socd_toggle_keycode(uint16_t keycode, keyrecord_t *record) {
     if (keycode != SOCD_TOG) {
         return true;
@@ -459,10 +421,6 @@ static bool process_socd_toggle_keycode(uint16_t keycode, keyrecord_t *record) {
 }
 
 bool pre_process_record_user(uint16_t keycode, keyrecord_t *record) {
-    if (!process_socd_toggle_combo(keycode, record)) {
-        return false;
-    }
-
     return process_socd_toggle_keycode(keycode, record);
 }
 
